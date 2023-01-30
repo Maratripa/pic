@@ -1,4 +1,4 @@
-use crate::{result::Result, support};
+use crate::{options::Options, result::Result, support};
 use ansi_colours::ansi256_from_rgb;
 use crossbeam_channel::{unbounded, Receiver, Sender};
 use image::{codecs::png::PngEncoder, DynamicImage, ImageEncoder};
@@ -217,6 +217,19 @@ pub fn fit_in_bounds(
 
 pub fn resize(image: &DynamicImage, width: u32, height: u32) -> DynamicImage {
     image.resize_exact(width, height, image::imageops::Triangle)
+}
+
+pub fn parse_options_on_image(image: &DynamicImage, options: &Options) -> DynamicImage {
+    let mut img = image.clone();
+    if let Some(deg) = options.rotation {
+        match deg {
+            90 => img = img.rotate90(),
+            180 => img = img.rotate180(),
+            270 => img = img.rotate270(),
+            _ => (),
+        }
+    }
+    img
 }
 
 /// image is mainly supposed to be a GIF here

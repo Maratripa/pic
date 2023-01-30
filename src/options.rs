@@ -41,4 +41,19 @@ pub struct Options {
     /// Clear image with the given id (0 for all) (kitty only)
     #[arg(long, value_name = "ID")]
     pub clear: Option<u32>,
+
+    /// Rotate clockwise [90, 180, 270] (blocks and kitty only)
+    #[arg(long = "rot", value_parser = valid_rotation_angle, value_name = "VALUE")]
+    pub rotation: Option<u32>,
+}
+
+const VALID_DEG: &[u32] = &[90, 180, 270];
+
+fn valid_rotation_angle(s: &str) -> Result<u32, String> {
+    let deg: u32 = s.parse().map_err(|_| format!("`{s}` isn't a number"))?;
+    if VALID_DEG.contains(&deg) {
+        Ok(deg)
+    } else {
+        Err(format!("Rotation value not in {VALID_DEG:?}"))
+    }
 }

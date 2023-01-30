@@ -1,8 +1,8 @@
 use crate::options::Options;
 use crate::result::Result;
 use crate::utils::{
-    ansi_color, fit_in_bounds, hide_cursor, move_cursor, move_cursor_up, pixel_is_transparent,
-    resize, show_cursor, CtrlcHandler, TermSize,
+    ansi_color, fit_in_bounds, hide_cursor, move_cursor, move_cursor_up, parse_options_on_image,
+    pixel_is_transparent, resize, show_cursor, CtrlcHandler, TermSize,
 };
 use crossbeam_channel::select;
 use image::codecs::gif::GifDecoder;
@@ -73,7 +73,9 @@ fn display_frame(stdout: &mut impl Write, image: &DynamicImage, options: &Option
 }
 
 fn display_image(stdout: &mut impl Write, buffer: &[u8], options: &Options) -> Result {
-    let image = image::load_from_memory(buffer)?;
+    let mut image = image::load_from_memory(buffer)?;
+    image = parse_options_on_image(&image, options);
+
     let (width, height) = (image.width(), image.height());
     let (cols, rows) = fit_in_bounds(width, height, options.cols, options.rows, options.upscale)?;
 
@@ -90,13 +92,14 @@ fn display_gif(stdout: &mut impl Write, buffer: &[u8], options: &Options) -> Res
             .iter()
             .map(|frame| {
                 let delay = Duration::from(frame.delay());
-                let image = &DynamicImage::ImageRgba8(frame.clone().into_buffer());
+                let mut image = DynamicImage::ImageRgba8(frame.clone().into_buffer());
+                image = parse_options_on_image(&image, options);
                 let (width, height) = (image.width(), image.height());
                 let (cols, rows) =
                     fit_in_bounds(width, height, options.cols, options.rows, options.upscale)
                         .unwrap_or_default();
 
-                (delay, resize(image, cols, rows * 2))
+                (delay, resize(&image, cols, rows * 2))
             })
             .collect();
 
